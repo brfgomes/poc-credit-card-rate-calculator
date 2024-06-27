@@ -67,3 +67,4 @@ C:\Dev\Backend\poc-credit-card-rate-calculator\Api\obj\Debug\net8.0\Api.pdb
 C:\Dev\Backend\poc-credit-card-rate-calculator\Api\obj\Debug\net8.0\Api.genruntimeconfig.cache
 C:\Dev\Backend\poc-credit-card-rate-calculator\Api\obj\Debug\net8.0\ref\Api.dll
 C:\Dev\Backend\poc-credit-card-rate-calculator\Api\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Dev\Backend\poc-credit-card-rate-calculator\Api\obj\Debug\net8.0\Api.sourcelink.json

@@ -20,3 +20,4 @@ C:\Dev\Backend\poc-credit-card-rate-calculator\Application\obj\Debug\net8.0\Appl
 C:\Dev\Backend\poc-credit-card-rate-calculator\Application\obj\Debug\net8.0\refint\Application.dll
 C:\Dev\Backend\poc-credit-card-rate-calculator\Application\obj\Debug\net8.0\Application.pdb
 C:\Dev\Backend\poc-credit-card-rate-calculator\Application\obj\Debug\net8.0\ref\Application.dll
+C:\Dev\Backend\poc-credit-card-rate-calculator\Application\obj\Debug\net8.0\Application.sourcelink.json

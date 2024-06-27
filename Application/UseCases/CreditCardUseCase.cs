@@ -1,47 +1,51 @@
-using System.Text.Json.Serialization;
-using System.Linq;
-
 namespace Application.UseCases;
 
 public static class CreditCardUseCase
 {
     public static CreditCardRateCalculatorResponse CreditCardRateCalculator(decimal desiredValue, string flag)
     {
-        if (desiredValue <= 0) 
-            return null;
-        
-        var amountToBeCharged = ResolveAmountsToBeCharged(desiredValue, flag);
-        return amountToBeCharged;
+        if (desiredValue <= 0) { return null; }
+        return ResolveAmountsToBeCharged(desiredValue, flag);
     }
 
     #region private metods
 
     private static CreditCardRateCalculatorResponse ResolveAmountsToBeCharged(decimal desiredValue, string flag)
     {
-        var tempLiquidValues = ResolveFinalLiquidValues(desiredValue, flag);
+        var finalLiquidValues = ResolveFinalLiquidValues(desiredValue, flag);
         var response = new CreditCardRateCalculatorResponse(
-            Math.Round(BillingAmountCalculator(desiredValue, tempLiquidValues.P1), 2),
-            0,
-            0,
-            0,
-            0,
-            Math.Round(BillingAmountCalculator(desiredValue, tempLiquidValues.P6.Sum()), 2),
-            0,
-            0,
-            0,
-            0,
-            0,
-            Math.Round(BillingAmountCalculator(desiredValue, tempLiquidValues.P12.Take(12).Sum()),2));
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P1),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P2.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P3.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P4.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P5.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P6.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P7.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P8.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P9.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P10.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P11.Sum()),
+            BillingAmountCalculator(desiredValue, finalLiquidValues.P12.Sum()));
         return response;
     }
 
-    private static OneSixTwelveParcels ResolveFinalLiquidValues(decimal desiredValue, string flag)
+    private static Parcels ResolveFinalLiquidValues(decimal desiredValue, string flag)
     {
         var partialLiquidValues = ResolvePartialLiquidValues(desiredValue, flag);
-        var P1FinalLiquidValues = ApplyAnticipationDiscounts(new List<decimal>{partialLiquidValues.P1}, flag)[0];
-        var P6FinalLiquidValues = ApplyAnticipationDiscounts(partialLiquidValues.P6, flag);
-        var P12FinalLiquidValues = ApplyAnticipationDiscounts(partialLiquidValues.P12, flag);
-        return new OneSixTwelveParcels(P1FinalLiquidValues, P6FinalLiquidValues, P12FinalLiquidValues);
+        var response = new Parcels(
+            ApplyAnticipationDiscounts(new List<decimal>{partialLiquidValues.P1}, flag)[0],
+            ApplyAnticipationDiscounts(partialLiquidValues.P2, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P3, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P4, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P5, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P6, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P7, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P8, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P9, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P10, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P11, flag),
+            ApplyAnticipationDiscounts(partialLiquidValues.P12, flag));
+        return response;
     }
 
     private static List<decimal> ApplyAnticipationDiscounts(List<decimal> partialLiquidValues, string flag)
@@ -60,19 +64,38 @@ public static class CreditCardUseCase
         {
             var parcelNumber = i + 1;
             var effectiveAnticipationTax = fixedAnticipationTax * parcelNumber;
-            var AnticipationDiscount = effectiveAnticipationTax / 100 * partialLiquidValues[i];
-            partialLiquidValues[i] -= AnticipationDiscount;
+            var anticipationDiscount = effectiveAnticipationTax / 100 * partialLiquidValues[i];
+            partialLiquidValues[i] -= anticipationDiscount;
         }
 
         return partialLiquidValues;
     }
 
-    private static OneSixTwelveParcels ResolvePartialLiquidValues(decimal desiredValue, string flag)
+    private static Parcels ResolvePartialLiquidValues(decimal desiredValue, string flag)
     {
-        var oneParcel = ApplyMdrDiscount(new List<decimal>{desiredValue}, flag)[0];
-        var sixParcels = ApplyMdrDiscount(ResolveParcels(desiredValue, 6), flag);
-        var twelveParcels = ApplyMdrDiscount(ResolveParcels(desiredValue, 12), flag);
-        return new OneSixTwelveParcels(oneParcel, sixParcels, twelveParcels);
+        var desiredValueList = new List<decimal> { desiredValue };
+        var parcelValues = new List<List<decimal>>();
+        var p1 = ApplyMdrDiscount(desiredValueList, flag)[0];
+        
+        for (int i = 2; i <= 12; i++)
+        {
+            parcelValues.Add(ApplyMdrDiscount(ResolveParcels(desiredValue, i), flag));
+        }
+        
+        return new Parcels(
+            p1,
+            parcelValues[0],
+            parcelValues[1],
+            parcelValues[2],
+            parcelValues[3],
+            parcelValues[4],
+            parcelValues[5],
+            parcelValues[6],
+            parcelValues[7],
+            parcelValues[8],
+            parcelValues[9],
+            parcelValues[10]
+        );
     }
 
     private static List<decimal> ApplyMdrDiscount(List<decimal> parcels, string flag)
@@ -121,7 +144,7 @@ public static class CreditCardUseCase
 
     private static decimal BillingAmountCalculator(decimal desiredValue, decimal billingAmount)
     {
-        return (desiredValue * desiredValue) / billingAmount;
+        return Math.Round((desiredValue * desiredValue) / billingAmount, 2);
     }
 
     #endregion
@@ -143,7 +166,19 @@ public static class CreditCardUseCase
         decimal X12);
     private record TaxMdr(decimal P1, decimal P2P6, decimal P7P12);
 
-    private record OneSixTwelveParcels(decimal P1, List<decimal> P6, List<decimal> P12);
+    private record Parcels(
+        decimal P1,
+        List<decimal> P2,
+        List<decimal> P3,
+        List<decimal> P4,
+        List<decimal> P5,
+        List<decimal> P6,
+        List<decimal> P7,
+        List<decimal> P8,
+        List<decimal> P9,
+        List<decimal> P10,
+        List<decimal> P11,
+        List<decimal> P12);
 
     #endregion
 
